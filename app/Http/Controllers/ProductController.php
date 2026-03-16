@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Traits\ApiResponse;
+
 
 class ProductController extends Controller
 {
+
+    use ApiResponse;
 
     public function index(Request $request): JsonResponse
     {
@@ -34,7 +38,7 @@ class ProductController extends Controller
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
             ]
-        ]);
+        ], 200);
     }
     public function store(Request $request)
     {
@@ -58,6 +62,77 @@ class ProductController extends Controller
             'status' => true,
             'message' => 'Product Created Successfully',
             'data' => $product
+        ], 201);
+    }
+
+
+    public function show(String $id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil di ambil',
+                'data' => $product
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+            //throw $th;
+        }
+    }
+
+    // public function update(Request $request, Product $product): JsonResponse
+    // {
+    //     // 1. validasi input
+    //     $validated = $request->validate([
+    //         'name' => 'sometimes|string|min:3|max:255',
+    //         'description' => 'nullable|string|max:1000',
+    //         'price' => 'sometimes|integer|min:0',
+    //         'stock' => 'sometimes|integer|min:0',
+    //     ], [
+    //         'name.required' => 'Tolong dong nama produknya diisi',
+    //         'name.min' => 'Tolong dong minimal 3 karakter untuk nama produk',
+    //     ]);
+
+    //     // 2. update data
+    //     $product->update($validated);
+
+    //     // 3. return response JSON
+    //     return $this->successResponse($product, 'Produk berhasil diupdate');
+    // }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        // 1. validasi input
+        $validated = $request->validate([
+            'name' => 'sometimes|string|min:3|max:255',
+            'description' => 'nullable|string|max:1000',
+            'price' => 'sometimes|integer|min:0',
+            'stock' => 'sometimes|integer|min:0',
+        ], [
+            'name.required' => 'Tolong dong nama produknya diisi',
+            'name.min' => 'Tolong dong minimal 3 karakter untuk nama produk',
         ]);
+
+        // 2. cari & update data
+        $product = Product::findOrFail($id);
+        $product->update($validated);
+
+        // 3. return response JSON
+        return $this->successResponse($product, 'Produk berhasil diupdate');
+    }
+    public function destroy(int $id): JsonResponse
+    {
+        // 2. cari & hapus data
+        $product = Product::findOrFail($id);
+        $productName = $product->name;
+        $product->delete();
+
+        // 3. return response JSON
+        return $this->successResponse(null, "Produk '$productName' berhasil dihapus");
     }
 }

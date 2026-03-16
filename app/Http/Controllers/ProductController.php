@@ -13,6 +13,8 @@ class ProductController extends Controller
 
     use ApiResponse;
 
+
+
     public function index(Request $request): JsonResponse
     {
         // $products = Product::all();
@@ -46,11 +48,16 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:255',
             'description' => 'nullable|string|max:1000',
-            'price' => 'required|integer|min:0',
-            'stock' => 'required|integer|min:0',
+            'price' => 'required|integer|min:1000',
+            'stock' => 'required|integer|min:1',
         ], [
             'name.required' => 'Tolong dong nama produknya diisi',
             'name.min' => 'Tolong dong minimal 3 karakter untuk nama produk',
+            'name.unique' => 'Nama produk sudah di gunakan',
+            'price.required' => 'Tolong dong harga produknya diisi',
+            'price.min' => 'Harga produk minimal banget ini mah Rp1.000',
+            'stock.required' => 'Stok diisi dong masa ga ada stock nya',
+            'stock.min' => 'Minimal stock harus 1'
         ]);
 
 
@@ -66,44 +73,18 @@ class ProductController extends Controller
     }
 
 
-    public function show(String $id)
+    public function show(int $id): JsonResponse
     {
-        try {
-            $product = Product::findOrFail($id);
+        $product = Product::findOrFail($id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Produk berhasil di ambil',
-                'data' => $product
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Produk tidak ditemukan'
-            ], 404);
-            //throw $th;
-        }
+        return $this->successResponse(
+            $product,
+            'Produk berhasil diambil'
+        );
     }
 
-    // public function update(Request $request, Product $product): JsonResponse
-    // {
-    //     // 1. validasi input
-    //     $validated = $request->validate([
-    //         'name' => 'sometimes|string|min:3|max:255',
-    //         'description' => 'nullable|string|max:1000',
-    //         'price' => 'sometimes|integer|min:0',
-    //         'stock' => 'sometimes|integer|min:0',
-    //     ], [
-    //         'name.required' => 'Tolong dong nama produknya diisi',
-    //         'name.min' => 'Tolong dong minimal 3 karakter untuk nama produk',
-    //     ]);
 
-    //     // 2. update data
-    //     $product->update($validated);
 
-    //     // 3. return response JSON
-    //     return $this->successResponse($product, 'Produk berhasil diupdate');
-    // }
 
     public function update(Request $request, int $id): JsonResponse
     {
@@ -122,15 +103,45 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $product->update($validated);
 
+
+
         // 3. return response JSON
         return $this->successResponse($product, 'Produk berhasil diupdate');
     }
+
+    public function restore(String $id)
+    {
+        $product = Product::onlyTrashed()->findOrFail($id);
+        $productName = $product->name;
+        $product->restore();
+
+        return $this->successResponse($product, "Produk '$productName' berhasil di Kembalikan");
+    }
+
+    public function trash()
+    {
+        $product = Product::onlyTrashed()->get();
+
+
+        return $this->successResponse($product, "Berhasil mengambil data produk");
+    }
+
     public function destroy(int $id): JsonResponse
     {
         // 2. cari & hapus data
         $product = Product::findOrFail($id);
         $productName = $product->name;
         $product->delete();
+
+        // 3. return response JSON
+        return $this->successResponse(null, "Produk '$productName' berhasil dihapus");
+    }
+    public function forceDelete(int $id): JsonResponse
+    {
+        // 2. cari & hapus data
+        $product = Product::findOrFail($id);
+        $productName = $product->name;
+        $product->forceDelete();
 
         // 3. return response JSON
         return $this->successResponse(null, "Produk '$productName' berhasil dihapus");

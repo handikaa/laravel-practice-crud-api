@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\StudentController;
 
 Route::prefix('v1')->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
@@ -17,4 +18,7 @@ Route::prefix('v1')->group(function () {
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
     Route::delete('/products/{id}/force', [ProductController::class, 'forceDelete']);
     Route::post('/products/{id}/restore', [ProductController::class, 'restore']);
+
+    Route::get('/students', [StudentController::class, 'show']);
+    Route::get('/students/{name}', [StudentController::class, 'showName']);
 });
